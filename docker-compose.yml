@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: carguard-db
+    environment:
+      POSTGRES_USER: carguard
+      POSTGRES_PASSWORD: carguard
+      POSTGRES_DB: carguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - carguard_pgdata:/var/lib/postgresql/data
+
+volumes:
+  carguard_pgdata:

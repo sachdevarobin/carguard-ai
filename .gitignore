@@ -1,0 +1,23 @@
+# Legacy Python (backend removed — on-device app only)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Flutter
+mobile/.dart_tool/
+mobile/.packages
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.metadata
+mobile/pubspec.lock
+mobile/ios/Pods/
+mobile/android/.gradle/
+mobile/android/local.properties
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store

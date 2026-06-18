@@ -1,0 +1,172 @@
+{
+  "makes": [
+    {
+      "id": "hyundai",
+      "name": "Hyundai",
+      "models": [
+        {
+          "id": "creta",
+          "name": "Creta",
+          "variants": [
+            {
+              "id": "creta-sxo",
+              "name": "SX(O)",
+              "features": ["ADAS Camera", "Ventilated Seats", "360 Camera", "Sunroof", "TPMS"],
+              "checklist": [
+                {"id": "adas", "title": "ADAS camera", "description": "Verify front radar and camera module are present and unobstructed.", "category": "exterior"},
+                {"id": "ventilated", "title": "Ventilated seats", "description": "Test front seat ventilation controls.", "category": "interior"},
+                {"id": "360", "title": "360 camera", "description": "Open surround view and check all four angles.", "category": "dashboard"},
+                {"id": "sunroof", "title": "Sunroof", "description": "Open/close sunroof and check for wind noise seals.", "category": "interior"}
+              ]
+            },
+            {
+              "id": "creta-sx",
+              "name": "SX",
+              "features": ["Sunroof", "TPMS", "Wireless Charger"],
+              "checklist": [
+                {"id": "sunroof", "title": "Sunroof", "description": "Check smooth operation and seals.", "category": "interior"},
+                {"id": "tpms", "title": "TPMS", "description": "Confirm tyre pressure display on cluster.", "category": "dashboard"}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "venue",
+          "name": "Venue",
+          "variants": [
+            {
+              "id": "venue-sx",
+              "name": "SX",
+              "features": ["Sunroof", "8-inch Touchscreen"],
+              "checklist": [
+                {"id": "infotainment", "title": "Touchscreen", "description": "Verify Android Auto / Apple CarPlay pairing.", "category": "dashboard"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tata",
+      "name": "Tata",
+      "models": [
+        {
+          "id": "nexon",
+          "name": "Nexon",
+          "variants": [
+            {
+              "id": "nexon-fearless",
+              "name": "Fearless",
+              "features": ["360 Camera", "Digital Cluster", "TPMS"],
+              "checklist": [
+                {"id": "360", "title": "360 camera", "description": "Test bird-eye view calibration.", "category": "dashboard"},
+                {"id": "cluster", "title": "Digital cluster", "description": "Verify all tell-tale icons illuminate at startup.", "category": "dashboard"},
+                {"id": "tpms", "title": "TPMS", "description": "Check tyre pressure readout.", "category": "dashboard"}
+              ]
+            },
+            {
+              "id": "nexon-fearless-plus",
+              "name": "Fearless Plus",
+              "features": ["360 Camera", "Digital Cluster", "TPMS", "Ventilated Seats"],
+              "checklist": [
+                {"id": "360", "title": "360 camera", "description": "Test surround view.", "category": "dashboard"},
+                {"id": "ventilated", "title": "Ventilated seats", "description": "Test seat ventilation.", "category": "interior"}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "punch",
+          "name": "Punch",
+          "variants": [
+            {
+              "id": "punch-adventure",
+              "name": "Adventure",
+              "features": ["7-inch Touchscreen", "TPMS"],
+              "checklist": [
+                {"id": "tpms", "title": "TPMS", "description": "Confirm tyre pressure monitoring.", "category": "dashboard"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maruti",
+      "name": "Maruti Suzuki",
+      "models": [
+        {
+          "id": "fronx",
+          "name": "Fronx",
+          "variants": [
+            {
+              "id": "fronx-alpha",
+              "name": "Alpha",
+              "features": ["Head-up Display", "360 Camera", "Wireless Charger"],
+              "checklist": [
+                {"id": "hud", "title": "Head-up display", "description": "Verify HUD projection clarity.", "category": "dashboard"},
+                {"id": "360", "title": "360 camera", "description": "Check camera calibration.", "category": "dashboard"}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "brezza",
+          "name": "Brezza",
+          "variants": [
+            {
+              "id": "brezza-zxi-plus",
+              "name": "ZXI+",
+              "features": ["Sunroof", "360 Camera"],
+              "checklist": [
+                {"id": "sunroof", "title": "Sunroof", "description": "Test sunroof operation.", "category": "interior"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mahindra",
+      "name": "Mahindra",
+      "models": [
+        {
+          "id": "xuv700",
+          "name": "XUV700",
+          "variants": [
+            {
+              "id": "xuv700-ax7",
+              "name": "AX7",
+              "features": ["ADAS", "Sony 3D Audio", "Panoramic Sunroof"],
+              "checklist": [
+                {"id": "adas", "title": "ADAS suite", "description": "Verify adaptive cruise and lane assist sensors.", "category": "exterior"},
+                {"id": "audio", "title": "Sony 3D audio", "description": "Test premium sound system.", "category": "interior"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kia",
+      "name": "Kia",
+      "models": [
+        {
+          "id": "seltos",
+          "name": "Seltos",
+          "variants": [
+            {
+              "id": "seltos-gtx-plus",
+              "name": "GTX+",
+              "features": ["ADAS", "Ventilated Seats", "Bose Audio"],
+              "checklist": [
+                {"id": "adas", "title": "ADAS", "description": "Check front camera and radar.", "category": "exterior"},
+                {"id": "bose", "title": "Bose audio", "description": "Test all speakers.", "category": "interior"}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
