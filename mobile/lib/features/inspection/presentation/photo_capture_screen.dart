@@ -9,6 +9,7 @@ import '../../../core/ai/photo_analyzer.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/widgets/layout_helpers.dart';
+import '../../../core/widgets/photo_crop_screen.dart';
 
 class PhotoCaptureScreen extends ConsumerStatefulWidget {
   const PhotoCaptureScreen({
@@ -31,18 +32,58 @@ class PhotoCaptureScreen extends ConsumerStatefulWidget {
 class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
   final _picker = ImagePicker();
   XFile? _preview;
+  Uint8List? _originalBytes;
   Uint8List? _previewBytes;
   bool _uploading = false;
+  bool _usingCrop = false;
   String? _lastAnalysisMessage;
 
   Future<void> _capture(ImageSource source) async {
-    final image = await _picker.pickImage(source: source, imageQuality: 85);
+    final image = await _picker.pickImage(
+      source: source,
+      imageQuality: 100,
+    );
     if (image == null) return;
     final bytes = await image.readAsBytes();
+    if (!mounted) return;
+
+    // Full photo by default — crop is optional via "Adjust crop".
     setState(() {
       _preview = image;
+      _originalBytes = bytes;
       _previewBytes = bytes;
+      _usingCrop = false;
+      _lastAnalysisMessage = null;
     });
+  }
+
+  Future<void> _recrop() async {
+    if (_originalBytes == null) return;
+    final cropped = await PhotoCropScreen.show(
+      context,
+      bytes: _originalBytes!,
+      hint: widget.hint,
+    );
+    if (cropped == null || !mounted) return;
+    setState(() {
+      _previewBytes = cropped;
+      _usingCrop = true;
+      _lastAnalysisMessage = null;
+    });
+  }
+
+  Future<void> _useFullPhoto() async {
+    if (_originalBytes == null) return;
+    setState(() {
+      _previewBytes = _originalBytes;
+      _usingCrop = false;
+      _lastAnalysisMessage = null;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Using full photo — nothing cropped')),
+      );
+    }
   }
 
   Future<void> _upload() async {
@@ -125,7 +166,9 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
       if (stay == true) {
         setState(() {
           _preview = null;
+          _originalBytes = null;
           _previewBytes = null;
+          _usingCrop = false;
           _lastAnalysisMessage = null;
         });
         return true;
@@ -136,61 +179,86 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasPreview = _previewBytes != null;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: Text(widget.title),
+        actions: [
+          if (hasPreview && _originalBytes != null) ...[
+            if (_usingCrop)
+              TextButton(
+                onPressed: _uploading ? null : _useFullPhoto,
+                child: const Text('Full photo'),
+              ),
+            TextButton(
+              onPressed: _uploading ? null : _recrop,
+              child: const Text('Adjust crop'),
+            ),
+          ],
+        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (_previewBytes != null)
-                  Image.memory(_previewBytes!, fit: BoxFit.cover)
-                else
-                  Container(
-                    color: const Color(0xFF111827),
-                    child: const Center(
-                      child: Icon(Icons.directions_car_filled_outlined, size: 120, color: Colors.white24),
+            child: ColoredBox(
+              color: Colors.black,
+              child: hasPreview
+                  ? InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 5,
+                      child: Center(
+                        child: Image.memory(
+                          _previewBytes!,
+                          fit: BoxFit.contain,
+                          gaplessPlayback: true,
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.photo_camera_outlined, size: 72, color: Colors.grey.shade700),
+                            const SizedBox(height: 20),
+                            Text(
+                              widget.hint,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey.shade400, height: 1.4, fontSize: 15),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'The full photo is analyzed — nothing is auto-cropped.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                Center(
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.85,
-                    height: MediaQuery.of(context).size.height * 0.45,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.primary, width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: _lastAnalysisMessage != null ? 80 : 24,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      widget.hint,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
+          if (hasPreview)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              color: Colors.black,
+              child: Text(
+                _usingCrop
+                    ? 'Cropped region will be analyzed. Tap Full photo to use the entire image.'
+                    : 'Full photo — pinch to zoom. Tap Adjust crop only if you want a smaller area.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 12, height: 1.35),
+              ),
+            ),
           Container(
             color: Colors.black,
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
             child: Column(
               children: [
                 Row(
@@ -216,7 +284,7 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
                 ),
                 const SizedBox(height: 12),
                 FilledButton(
-                  onPressed: _preview == null || _uploading ? null : _upload,
+                  onPressed: hasPreview && !_uploading ? _upload : null,
                   child: _uploading
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,

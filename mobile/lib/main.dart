@@ -10,21 +10,40 @@ import 'core/data/database.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppDatabase.instance.database;
-  await initializeDateFormatting('en_IN');
-  await initializeDateFormatting('en_US');
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    if (kReleaseMode) {
-      debugPrint('FlutterError: ${details.exceptionAsString()}');
-    }
+    debugPrint('FlutterError: ${details.exceptionAsString()}');
   };
 
   runZonedGuarded(
-    () => runApp(const ProviderScope(child: CarGuardApp())),
+    () async {
+      await _bootstrap();
+      runApp(const ProviderScope(child: CarGuardApp()));
+    },
     (error, stack) {
       debugPrint('Uncaught error: $error\n$stack');
     },
   );
+}
+
+Future<void> _bootstrap() async {
+  try {
+    await AppDatabase.instance.database;
+  } catch (error, stack) {
+    debugPrint('Database open failed, resetting: $error\n$stack');
+    try {
+      await AppDatabase.instance.reset();
+    } catch (resetError) {
+      debugPrint('Database reset failed: $resetError');
+      rethrow;
+    }
+  }
+
+  try {
+    await initializeDateFormatting('en_IN');
+    await initializeDateFormatting('en_US');
+  } catch (error) {
+    debugPrint('Date locale init skipped: $error');
+  }
 }

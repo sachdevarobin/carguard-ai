@@ -26,10 +26,17 @@ done
 
 if [ "$MODE" = "debug" ]; then
   echo "==> CarGuard AI — iPhone DEBUG (hot reload, launch via this terminal only)"
+  echo ""
+  echo "    ⚠️  DEBUG builds CRASH if you tap the home-screen icon."
+  echo "    Only launch from this terminal. For normal use, run without --dev."
 else
-  echo "==> CarGuard AI — iPhone RELEASE (open from home screen after install)"
+  echo "==> CarGuard AI — iPhone RELEASE (safe to open from home screen)"
 fi
 echo "    On-device: SQLite + ML Kit — no Mac backend required"
+echo ""
+echo "    Why first launch sometimes 'crashes':"
+echo "    • Debug build + home-screen tap → iOS blocks it (not a real app bug)"
+echo "    • Fix: use release (this script default) or launch debug only from terminal"
 echo ""
 echo "    Trust tips (free Apple ID):"
 echo "    • USB 'Trust This Computer' — once per cable/Mac until iOS forgets"
@@ -61,8 +68,17 @@ fi
 echo "==> Installing on device: $DEVICE_ID"
 if [ "$MODE" = "debug" ]; then
   echo "    Hot reload: save .dart files in Cursor or press 'r' in this terminal"
-  exec "$FLUTTER" run -d "$DEVICE_ID"
+  echo "    Keep phone unlocked. Do NOT open the app from the home screen."
+  if ! "$FLUTTER" run -d "$DEVICE_ID"; then
+    echo ""
+    echo "==> Debug attach failed — installing RELEASE so home-screen icon works..."
+    "$FLUTTER" install -d "$DEVICE_ID" --release
+    echo "    Done. Open CarGuard AI from your home screen."
+  fi
 else
-  echo "    After install: open CarGuard AI from home screen (release build)."
-  exec "$FLUTTER" run -d "$DEVICE_ID" --release
+  echo "    Building & installing release (home-screen safe)..."
+  "$FLUTTER" build ios --release
+  "$FLUTTER" install -d "$DEVICE_ID" --release
+  echo ""
+  echo "    ✓ Installed. Open CarGuard AI from your home screen."
 fi

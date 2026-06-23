@@ -4,10 +4,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
+import 'exterior/exterior_damage_analyzer.dart';
 import 'parsers/odometer_parser.dart';
 import 'parsers/tyre_parser.dart';
-import 'parsers/vin_decoder.dart';
 import 'parsers/vin_parser.dart';
+import 'vin/vin_enrichment_service.dart';
 import 'vin/vin_image_processor.dart';
 import 'vin/vin_ocr_pipeline.dart';
 
@@ -48,6 +49,7 @@ class OnDevicePhotoAnalyzer {
   Future<void> dispose() async {
     await _recognizer?.close();
     _recognizer = null;
+    await ExteriorDamageAnalyzer.instance.dispose();
   }
 
   Future<PhotoAnalysisResult> analyze(String category, String imagePath) async {
@@ -112,32 +114,42 @@ class OnDevicePhotoAnalyzer {
           .toList(),
     );
 
-    return _vinResultFromParse(parsed);
+    return await _vinResultFromParse(parsed);
   }
 
-  PhotoAnalysisResult _vinResultFromParse(VinParseResult parsed) {
+  Future<PhotoAnalysisResult> _vinResultFromParse(VinParseResult parsed) async {
+    final enriched = parsed.vin != null
+        ? await VinEnrichmentService.instance.enrich(
+            parsed.vin!,
+            modelYear: parsed.manufacturingYear,
+            baseDetails: parsed.details,
+          )
+        : <String, dynamic>{};
+
     if (!parsed.isValid) {
       return _reject(
         parsed.rejectionReason ?? 'VIN not readable. Frame the full 17-character sticker with "VIN" label.',
         parsed.checkDigitValid ? ['vin_context_weak'] : ['vin_not_found', 'vin_check_digit_failed'],
         data: {
-          if (parsed.vin != null) ...vinDetailsToJson(parsed.details ?? decodeVin(parsed.vin!)),
+          if (enriched.isNotEmpty) ...enriched,
           ...vinParseMetaToJson(parsed),
         },
       );
     }
 
-    final details = parsed.details!;
+    final make = enriched['make'] ?? '';
+    final model = enriched['model'] ?? '';
+    final year = enriched['model_year'] ?? parsed.manufacturingYear;
+
     return PhotoAnalysisResult(
       confidence: parsed.confidence,
       message:
-          'VIN verified (${parsed.consensusPasses} OCR passes) — '
-          '${details.manufacturer ?? details.country ?? 'vehicle'} ${details.modelYear ?? ''}'
-              .trim(),
+          'VIN verified (${parsed.consensusPasses} OCR passes) — $make $model $year'.trim(),
       data: {
-        ...vinDetailsToJson(details),
+        ...enriched,
         ...vinParseMetaToJson(parsed),
-        'manufacturing_year': details.modelYear,
+        'manufacturing_year': year,
+        'confidence': parsed.confidence,
       },
       needsRetake: parsed.confidence < _passConfidence,
     );
@@ -273,18 +285,24 @@ class OnDevicePhotoAnalyzer {
       );
     }
 
+    final damage = await ExteriorDamageAnalyzer.instance.analyze(
+      imagePath,
+      category: category,
+    );
+
     return PhotoAnalysisResult(
-      confidence: 55,
-      message:
-          '$category saved for manual inspection. Automated dent/scratch AI is not available on-device.',
+      confidence: damage.confidence,
+      message: damage.message,
       data: {
-        'automated_check': false,
-        'manual_verification_required': true,
-        'width': size.width.round(),
-        'height': size.height.round(),
+        ...damage.toPayload(
+          width: size.width.round(),
+          height: size.height.round(),
+          category: category,
+        ),
         'ocr_text': text,
       },
-      needsRetake: false,
+      needsRetake: damage.damageDetected && damage.confidence < _passConfidence,
+      errors: damage.damageDetected ? ['exterior_damage_detected'] : const [],
     );
   }
 }

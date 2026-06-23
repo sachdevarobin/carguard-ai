@@ -63,22 +63,27 @@ AnalysisDetailCard? buildAnalysisCardFromJson(String category, Map<String, dynam
   final needsRetake = data['needs_retake'] == true;
 
   if (category == 'vin' && data['vin'] != null) {
+    final source = _vinSourceLabel(data['decode_source'] as String?);
     final rows = <({String label, String value})>[
       (label: 'VIN', value: '${data['vin']}'),
       (label: 'Check digit', value: data['check_digit_valid'] == true ? 'Valid ✓' : 'Invalid'),
-      if (data['model_year'] != null) (label: 'Model year', value: '${data['model_year']}'),
-      if (data['country'] != null) (label: 'Country', value: '${data['country']}'),
-      if (data['region'] != null) (label: 'Region', value: '${data['region']}'),
-      if (data['manufacturer'] != null) (label: 'Manufacturer', value: '${data['manufacturer']}'),
-      if (data['vehicle_category'] != null) (label: 'Vehicle type', value: '${data['vehicle_category']}'),
-      if (data['wmi'] != null) (label: 'WMI', value: '${data['wmi']}'),
-      if (data['plant_code'] != null) (label: 'Plant code', value: '${data['plant_code']}'),
+      (label: 'Make', value: '${data['make'] ?? '—'}'),
+      (label: 'Model', value: '${data['model'] ?? '—'}'),
+      (label: 'Model year', value: '${data['model_year'] ?? '—'}'),
+      (label: 'Manufacturer', value: '${data['manufacturer'] ?? '—'}'),
+      (label: 'Body / type', value: '${data['body_class'] ?? data['vehicle_type'] ?? '—'}'),
+      (label: 'Fuel', value: '${data['fuel_type'] ?? '—'}'),
+      (label: 'Engine', value: '${data['engine'] ?? '—'}'),
+      (label: 'Drive', value: '${data['drive_type'] ?? '—'}'),
+      (label: 'Built in', value: '${data['plant_country'] ?? data['country'] ?? '—'}'),
+      (label: 'Plant', value: '${data['plant_city'] ?? data['plant_code'] ?? '—'}'),
+      (label: 'Region', value: '${data['region'] ?? '—'}'),
+      (label: 'WMI', value: '${data['wmi'] ?? '—'}'),
+      (label: 'Data source', value: source),
       if (data['ocr_passes_matched'] != null)
         (label: 'OCR passes', value: '${data['ocr_passes_matched']} agreed'),
       if (data['anchored_to_vin_label'] == true)
         (label: 'VIN label', value: 'Visible in photo'),
-      if (data['ocr_snippet'] != null && '${data['ocr_snippet']}'.isNotEmpty)
-        (label: 'Raw text', value: '${data['ocr_snippet']}'),
       (label: 'Confidence', value: '${data['confidence'] ?? '—'}%'),
     ];
     return AnalysisDetailCard(
@@ -126,6 +131,28 @@ AnalysisDetailCard? buildAnalysisCardFromJson(String category, Map<String, dynam
     );
   }
 
+  if (const {'front', 'rear', 'left', 'right'}.contains(category) && data['automated_check'] == true) {
+    final damage = data['damage_detected'] == true;
+    final types = (data['damage_types'] as List?)?.cast<String>() ?? const [];
+    final count = data['damage_count'] as int? ?? 0;
+    final rows = <({String label, String value})>[
+      (label: 'AI scan', value: damage ? 'Damage flagged' : 'No damage flagged'),
+      if (types.isNotEmpty) (label: 'Findings', value: types.join(', ')),
+      if (count > 0) (label: 'Regions', value: '$count area(s)'),
+      (label: 'Model', value: 'YOLO11n on-device'),
+      (label: 'Confidence', value: '${data['confidence'] ?? '—'}%'),
+      (label: 'Note', value: 'Always verify paint and panels in person.'),
+    ];
+    return AnalysisDetailCard(
+      title: '${category[0].toUpperCase()}${category.substring(1)} exterior',
+      subtitle: data['message'] as String? ?? 'Panel damage scan',
+      rows: rows,
+      icon: Icons.directions_car_outlined,
+      accentColor: damage ? AppColors.warning : AppColors.success,
+      needsRetake: needsRetake,
+    );
+  }
+
   return null;
 }
 
@@ -133,3 +160,11 @@ List<({String label, String value})> detailRowsFromResult(Map<String, dynamic> d
   final card = buildAnalysisCardFromJson(category, data);
   return card?.rows ?? [];
 }
+
+String _vinSourceLabel(String? source) => switch (source) {
+      'nhtsa_live' => 'NHTSA vPIC (live)',
+      'nhtsa_cached' => 'NHTSA vPIC (cached)',
+      'offline_registry' => 'Offline WMI registry',
+      'iso3779' => 'ISO 3779 structure',
+      _ => 'Combined decode',
+    };
